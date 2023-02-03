@@ -31,43 +31,74 @@ lowNodes = random.sample(range(0, peers-1), int(lowCPU*peers/100))
 # adj[adj <= 0.5] = 0
 # print(adj)
 
-# Creating peers
-# for i in range(1, peers):
 
-#     # s and l are two flags for slow and low CPU nodes
-#     Node(i, [], [], [], [], s, l)
 
+visited = []
+
+def dfs(startNode): 
+	visited[startNode] = True
+	for neighbour in connectednodes[startNode]: 
+		if (visited[neighbour] == False):
+			dfs(neighbour)
+
+def check():
+    for i in range(0, peers-1):
+        visited.append(False)
+    dfs(0)
+    flag = True
+    for i in range(0, peers-1):
+        if (visited[i] == False):
+            flag = False
+            break
+    return flag
 
 
 connectednodes = []
 
-fullnodes = []
+fullnodes = set()
 
-for i in range(0, peers-1):
-    connectednodes.append([])
+def create_graph():
+    for i in range(0, peers-1):
+        connectednodes.append([])
 
-for i in range(0, peers-1):
-    connections = random.randint(4, 8)
-    if(connections<=len(connectednodes[i])):
-        continue
-    ls = list(range(0,peers-1))
-    ls.remove(i)
-    for j in connectednodes[i]:
-        ls.remove(j)
-    ls = list(set(ls) - set(fullnodes))
-    if(len(ls)<(connections-len(connectednodes[i]))):
-        continue
-    connectednodes[i] += random.sample(ls, connections-len(connectednodes[i]))
+    for i in range(0, peers-1):
+        connections = random.randint(4, 8)
+        if(connections<=len(connectednodes[i])):
+            continue
+        st = set(range(0,peers-1))
+        st.remove(i)
+        for j in connectednodes[i]:
+            st.remove(j)
+        st = st - fullnodes
+        # print(st)
+        if(len(st)<(connections-len(connectednodes[i]))):
+            continue
+        connectednodes[i] += random.sample(list(st), connections-len(connectednodes[i]))
+        if (len(connectednodes[i])==8):
+            fullnodes.add(i)
+        for k in connectednodes[i]:
+            if i not in connectednodes[k]:
+                connectednodes[k].append(i)
+            if(len(connectednodes[k]) == 8) :
+                fullnodes.add(k)
+                # print("Welcome" + str(k))
 
-    for k in connectednodes[i]:
-        if i not in connectednodes[k]:
-            connectednodes[k].append(i)
-        if(len(connectednodes[k]) == 8) :
-            fullnodes.append(k)
-            # print("Welcome" + str(k))
-
+create_graph()
+while (check() == False):
+    visited = []
+    connectednodes = []
+    fullnodes = set()
+    create_graph()
 
 for i in connectednodes:
     for j in i:
         print(str(j) + " ", end="")
     print("")
+
+
+# Creating peers
+for i in range(1, peers):
+    # s and l are two flags for slow and low CPU nodes
+    Node(i, connectednodes[i], [], [], [], s, l)
+
+
