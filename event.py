@@ -1,6 +1,11 @@
 class Event:
-    def __init__(self, timestamp, name):
+    def __init__(self, timestamp, type, eventfor):
         self.timestamp = timestamp
-        self.name = name
-    def __cmp__(self, other):
-        return (self.timestamp>other.timestamp) - (self.timestamp<other.timestamp)
+        self.type = type
+        self.eventfor = eventfor
+    
+    def __repr__(self):
+        return f'Node value: {self.timestamp} {self.type} {self.eventfor}'
+    
+    def __lt__(self, other):
+        return self.timestamp<other.timestamp
