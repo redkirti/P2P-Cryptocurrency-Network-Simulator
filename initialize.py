@@ -4,6 +4,7 @@ def initialize(peers, slow, lowCPU):
     # Choosing slow and lowCPU nodes randomly
     slowNodes = random.sample(range(peers), int(slow*peers/100))
     lowNodes = random.sample(range(peers), int(lowCPU*peers/100))
+    hpower = (1 / ((10*peers)- (9*len(lowNodes))))
 
     # print(slowNodes)
     # print(lowNodes)
@@ -72,10 +73,8 @@ def initialize(peers, slow, lowCPU):
         fullnodes = set()
         create_graph()
 
-    # for i in connectednodes:
-    #     for j in i:
-    #         print(str(j) + " ", end="")
-    #     print("")
+    for i in connectednodes:
+        print(i)
 
     node = []
     # Creating peers
@@ -87,5 +86,5 @@ def initialize(peers, slow, lowCPU):
             isSlow = True
         if i in lowNodes:
             isLowCPU = True
-        node.append(Node(i, connectednodes[i], {}, [], [], isSlow, isLowCPU))
-    return node
+        node.append(Node(i, connectednodes[i], {}, [], [], isSlow, isLowCPU, peers))
+    return node, hpower

@@ -14,6 +14,7 @@ from initialize import initialize
 from heapq import *
 from event import Event
 from transaction import Txn
+from block import Block
 
 #No of peers
 peers = int(sys.argv[1])
@@ -24,7 +25,7 @@ lowCPU = int(sys.argv[3])
 
 simulationTime = int(sys.argv[4])
 
-node = initialize(peers, slow, lowCPU)
+node, hpower = initialize(peers, slow, lowCPU)
 heap = []
 currentTime = 0
 txncount = 0
@@ -53,7 +54,15 @@ while(currentTime<simulationTime):
     #Scale is the mean of the exponential distribution
     currentTime = currentTime + np.random.exponential(scale=2) 
     sender = random.randint(0,peers-1)
-    heappush(heap, Event(currentTime, "sendTxn", sender))
+    heappush(heap, Event(currentTime, "sendTxn", sender, -1, Txn(0,0,0), Block(0,[],0)))
+
+currentTime = 0
+# Filling queue with block sending events
+while(currentTime<simulationTime):
+    #Scale is the mean of the exponential distribution
+    currentTime = currentTime + np.random.exponential(scale=2) 
+    sender = random.randint(0,peers-1)
+    heappush(heap, Event(currentTime, "sendTxn", sender, -1, Txn(0,0,0), Block(0,[],0)))
 
 
 # Genereating random transaction information
@@ -70,6 +79,7 @@ def generateTxn(sender):
 def createBlock():
     pass
 
+#Calculating latencies for different links
 def calculateLatency(sender, receiver, type):
     if(type == "txn"):
         size = 1024
@@ -90,9 +100,21 @@ while(currentTime<simulationTime):
     event = heappop(heap)
     currentTime = event.timestamp
     if(event.type == "sendTxn"):
-        txn = generateTxn(event.eventfor)
+        txn = generateTxn(event.eventfrom)
         # node[txn.sender].peersarr    : This represents nodes this node is connected to
         for i in node[txn.sender].peersarr:
             latency = calculateLatency(txn.sender, i, "txn")
-            heappush(heap, Event(currentTime+latency, "receiveTxn", i))
+            heappush(heap, Event(currentTime+latency, "receiveTxn", event.eventfrom, i, txn, Block(0,[],0)))
+    elif(event.type == "receiveTxn"):
+        if event.txn.txnid in node[event.eventto].visited:
+            continue
+        # Adding txn to this node's list if txns
+        node[event.eventto].unspenttxnsarr.append(event.txn)
+        
+        node[event.eventto].visited[event.txn.txnid] = True
+        ls = node[event.eventto].peersarr.copy()
+        ls.remove(event.eventfrom)
+        for i in ls:
+            latency = calculateLatency(event.eventto, i, "txn")
+            heappush(heap, Event(currentTime+latency, "receiveTxn", event.eventto, i, event.txn, Block(0,[],0)))
     print(event)

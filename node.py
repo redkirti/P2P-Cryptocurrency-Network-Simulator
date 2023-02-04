@@ -1,5 +1,5 @@
 class Node:
-    def __init__(self, nodeid, peersarr, blockchain, unspenttxnsarr, alltxnsarr, slow, low):
+    def __init__(self, nodeid, peersarr, blockchain, unspenttxnsarr, alltxnsarr, slow, low, peers):
         self.nodeid = nodeid
         self.peersarr = peersarr
         self.blockchain = {}
@@ -7,4 +7,5 @@ class Node:
         self.alltxnsarr = alltxnsarr
         self.slow = slow
         self.low = low
-        self.visited = []
+        self.visited = {}
+        self.balance = [100]*peers
