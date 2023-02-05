@@ -3,3 +3,4 @@ class Block:
         self.blkid = blkid
         self.txnsarr = txnsarr
         self.prevblkid = prevblkid
+        self.balance = {}
