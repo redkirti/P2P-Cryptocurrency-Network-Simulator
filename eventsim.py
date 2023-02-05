@@ -134,6 +134,7 @@ while(currentTime<simulationTime):
             # createBlkEvent(currentTime, event.eventfrom, node[event.eventfrom].level+1)
             continue
         blk = node[event.eventfrom].generateBlock()
+        node[event.eventfrom].blkvisited[blk.blkid] = True
         # Creating next block generation event for the same peer
         createBlkEvent(currentTime, event.eventfrom, event.level+1)
         # Sending blocks to other nodes
@@ -142,7 +143,7 @@ while(currentTime<simulationTime):
             heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventfrom, i, None, blk, event.level))
     elif (event.type == "receiveBlk"):
         # Verify transactions
-
+        # node[event.eventto].verify(event.block)
         # Same receive block txns can also arrive, ignore it
         if event.block.blkid in node[event.eventto].blkvisited:
             continue
