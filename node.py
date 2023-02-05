@@ -14,7 +14,7 @@ class Node:
         self.blkvisited = {}
         self.balance = [1000]*peers
         self.level = 0
-        self.currentHash = hashlib.sha256("0".encode()).hexdigest()
+        self.currentHash = str(hashlib.sha256("0".encode()).hexdigest())
 
 
     def generateBlock(self):
@@ -24,19 +24,21 @@ class Node:
             msg += i.txnstr
 
         # Add some extra random values to the string ---later
-        hash = hashlib.sha256(msg.encode()).hexdigest()
-        blk = Block(hash, txns, self.currhash)
-        updateChain(blk)
+        hash = str(hashlib.sha256(msg.encode()).hexdigest())
+        blk = Block(hash, txns, self.currentHash)
+        self.updateChain(blk)
         return blk
 
     def updateChain(self, block):
         self.level += 1
+        if self.currentHash not in self.blockchain:
+            self.blockchain[self.currentHash] = []
         self.blockchain[self.currentHash].append(block)
         self.currentHash = block.blkid
         for i in block.txnsarr:
             # Updating balance of nodes
             self.balance[i.sender] -= i.amount
             # Removing used txns from unspent transactions 
-            if i in unspenttxnsarr:
-                unspenttxnsarr.remove(i)
+            if i in self.unspenttxnsarr:
+                self.unspenttxnsarr.remove(i)
         

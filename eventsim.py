@@ -5,6 +5,8 @@
 # random block creating with arrival times chosen from a poisson distribution
 # propogation of blocks on the block chain
 # addition of blocks to a local blockchain of a node and resolution of forks based on block arrival time, the chain with first arrived one is extended.
+# New line added
+
 
 import sys
 from node import Node
@@ -52,7 +54,7 @@ for i in range(peers):
 # Filling queue with transaction sending events
 while(currentTime<simulationTime):
     #Scale is the mean of the exponential distribution
-    currentTime = currentTime + np.random.exponential(scale=2) 
+    currentTime = currentTime + np.random.exponential(scale=0.5) 
     sender = random.randint(0,peers-1)
     heappush(heap, Event(currentTime, "createTxn", sender, -1, None, None, None))
 
@@ -64,7 +66,7 @@ def createBlkEvent(currentTime, i, level):
         power = hpower
     else:
         power = hpower * 10
-    stamp = np.random.exponential(scale=(100/power), 2)
+    stamp = np.random.exponential(scale=(10/power))
     print(stamp)
     heappush(heap, Event(currentTime + stamp, "createBlk", i, -1, None, None, level))
 
@@ -108,6 +110,7 @@ while(currentTime<simulationTime):
     currentTime = event.timestamp
     if(event.type == "createTxn"):
         txn = generateTxn(event.eventfrom)
+        node[txn.sender].unspenttxnsarr.append(txn)
         # node[txn.sender].peersarr    : This represents nodes this node is connected to
         for i in node[txn.sender].peersarr:
             latency = calculateLatency(event.eventfrom, i, "txn")
