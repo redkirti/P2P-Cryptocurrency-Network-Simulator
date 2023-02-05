@@ -1,6 +1,6 @@
 import random
 import hashlib
-from block iport Block
+from block import Block
 class Node:
     def __init__(self, nodeid, peersarr, blockchain, unspenttxnsarr, alltxnsarr, slow, low, peers):
         self.nodeid = nodeid
@@ -14,23 +14,22 @@ class Node:
         self.blkvisited = {}
         self.balance = [1000]*peers
         self.level = 0
-        self.currentHash = hashlib.sha256("0").hexdigest()
+        self.currentHash = hashlib.sha256("0".encode()).hexdigest()
 
 
     def generateBlock(self):
-        txns = random.sample(self.unspenttxnsarr, 5)
+        txns = random.sample(self.unspenttxnsarr, 2)
         msg = ""
         for i in txns:
             msg += i.txnstr
 
         # Add some extra random values to the string ---later
-        hash = hashlib.sha256(msg).hexdigest()
-        self.level += 1
+        hash = hashlib.sha256(msg.encode()).hexdigest()
         blk = Block(hash, txns, self.currhash)
-        blockchain[currentHash].append(blk)
+        updateChain(blk)
         return blk
 
-    def updateChain(block):
+    def updateChain(self, block):
         self.level += 1
         self.blockchain[self.currentHash].append(block)
         self.currentHash = block.blkid
