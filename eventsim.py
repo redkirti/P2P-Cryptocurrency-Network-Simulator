@@ -17,7 +17,7 @@ from heapq import *
 from event import Event
 from transaction import Txn
 from block import Block
-
+from graphy import dot
 #No of peers
 peers = int(sys.argv[1])
 # Percent of slow peers
@@ -160,3 +160,12 @@ while(currentTime<simulationTime):
             heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventto, i, None, event.block, event.level))
 
     print(event)
+
+
+for nodes in node:
+    nodes.showBlockchain()
+
+
+# dot = graphviz.Digraph(comment='Block Chain')
+# dot  #doctest: +ELLIPSIS
+dot.render('doctest-output/toomuch'+'.gv').replace('\\', '/')
