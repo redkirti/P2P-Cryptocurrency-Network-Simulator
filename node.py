@@ -47,7 +47,7 @@ class Node:
         self.level += 1
         if self.currentHash not in self.blockchain:
             self.blockchain[self.currentHash] = []
-        self.blockchain[self.currentHash].append(block)
+        self.blockchain[block.prevblkid].append(block)
         self.currentHash = block.blkid
         for i in block.txnsarr:
             # Updating balance of nodes
@@ -59,9 +59,9 @@ class Node:
     def showBlockchain(self):
         visited = []
         for key,val in self.blockchain.items():
+            print(key,val)
             if len(val)>1:
                 print("FICCCCCLLLLLLKKKKK")
-                print(key,val)
                 for xx in val:
                     print(xx.blkid)
         # dot = graphviz.Graph(comment='Block Chain')

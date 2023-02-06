@@ -16,8 +16,9 @@ from initialize import initialize
 from heapq import *
 from event import Event
 from transaction import Txn
-from block import Block
 from graphy import dot
+from block import Block
+
 #No of peers
 peers = int(sys.argv[1])
 # Percent of slow peers
@@ -129,13 +130,14 @@ while(currentTime<simulationTime):
             heappush(heap, Event(currentTime+latency, "receiveTxn", event.eventto, i, event.txn, None, None))
     elif (event.type == "createBlk"):
         # Check if a block exists at the same level in that node, if it exists then return null else create the blk
-        if(node[event.eventfrom].level+1!=event.level):
-            #Just add it to the blockchain to show fork ====== remaining
-            # createBlkEvent(currentTime, event.eventfrom, node[event.eventfrom].level+1)
-            continue
+        # if(node[event.eventfrom].level+1!=event.level):
+        #     #Just add it to the blockchain to show fork ====== remaining
+        #     # createBlkEvent(currentTime, event.eventfrom, node[event.eventfrom].level+1)
+        #     continue
         blk = node[event.eventfrom].generateBlock()
         node[event.eventfrom].blkvisited[blk.blkid] = True
         # Creating next block generation event for the same peer
+        print("errror aaajaa")
         createBlkEvent(currentTime, event.eventfrom, event.level+1)
         # Sending blocks to other nodes
         for i in node[event.eventfrom].peersarr:
@@ -160,13 +162,9 @@ while(currentTime<simulationTime):
             latency = calculateLatency(event.eventto, i, "blk")
             heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventto, i, None, event.block, event.level))
 
-    print(event)
+    print(event)    
 
 
-for nodes in node:
-    nodes.showBlockchain()
-
-
-# dot = graphviz.Digraph(comment='Block Chain')
-# dot  #doctest: +ELLIPSIS
-dot.render('doctest-output/toomuch'+'.gv').replace('\\', '/')
+for nd in node:
+    nd.showBlockchain()
+dot.render('doctest-output/round-table.gv', view=True)  # doctest: +SKIP
