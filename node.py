@@ -17,8 +17,22 @@ class Node:
         self.blkvisited = {}
         self.balance = [1000]*peers
         self.level = 0
-        self.currentHash = str(hashlib.sha256("0".encode()).hexdigest())
+        # self.currentHash = str(hashlib.sha256("0".encode()).hexdigest())
+        self.currentHash = "0"
         self.register={}
+        self.genesis=self.getGenesis()
+    
+
+    def getGenesis(self):
+        blk=Block("0",None,None)
+        blk.balance=[self.peers]*1000
+        self.blockchain["0"]=blk
+    
+
+    
+
+
+
 
     # Still have to add coinbase txn in the block generation function....
 
@@ -55,6 +69,7 @@ class Node:
             # Removing used txns from unspent transactions 
             if i in self.unspenttxnsarr:
                 self.unspenttxnsarr.remove(i)
+
     
     def showBlockchain(self):
         visited = []
