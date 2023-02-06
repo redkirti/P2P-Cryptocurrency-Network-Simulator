@@ -28,7 +28,7 @@ lowCPU = int(sys.argv[3])
 
 simulationTime = int(sys.argv[4])
 
-node, hpower = initialize(peers, slow, lowCPU)
+nodes, hpower = initialize(peers, slow, lowCPU)
 heap = []
 currentTime = 0
 txncount = 0
@@ -63,12 +63,13 @@ currentTime = 0
 # Filling queue with block sending events
 
 def createBlkEvent(currentTime, i, level):
-    if node[i].low == True:
+    print("Block event created - Time : %s, level : %s , Node Number: %s"%(currentTime,level,i) )
+    if nodes[i].low == True:
         power = hpower
     else:
         power = hpower * 10
     stamp = np.random.exponential(scale=(10/power))
-    print(stamp)
+    # print(stamp)
     heappush(heap, Event(currentTime + stamp, "createBlk", i, -1, None, None, level))
 
 for i in range(peers):
@@ -95,7 +96,7 @@ def calculateLatency(sender, receiver, type):
         size = 1024
     else:
         size = 1024*1024
-    if(node[sender].slow or node[receiver].slow):
+    if(nodes[sender].slow or nodes[receiver].slow):
         c = 5*1000000
     else:
         c = 100000000
@@ -110,22 +111,25 @@ while(currentTime<simulationTime):
     event = heappop(heap)
     currentTime = event.timestamp
     if(event.type == "createTxn"):
+        print("Random Transaction created - Time : %s, From : %s , Node Number: %s"%(currentTime,event.eventfrom,i) )
         txn = generateTxn(event.eventfrom)
-        node[txn.sender].unspenttxnsarr.append(txn)
+        nodes[txn.sender].unspenttxnsarr.append(txn)
         # node[txn.sender].peersarr    : This represents nodes this node is connected to
-        for i in node[txn.sender].peersarr:
+        for i in nodes[txn.sender].peersarr:
+            print("sending transactions to :%s"%i)
             latency = calculateLatency(event.eventfrom, i, "txn")
             heappush(heap, Event(currentTime+latency, "receiveTxn", event.eventfrom, i, txn, None, None))
     elif(event.type == "receiveTxn"):
-        if event.txn.txnid in node[event.eventto].txnvisited:
+        if event.txn.txnid in nodes[event.eventto].txnvisited:
             continue
         # Adding txn to this node's list of txns
-        node[event.eventto].unspenttxnsarr.append(event.txn)
+        nodes[event.eventto].unspenttxnsarr.append(event.txn)
         
-        node[event.eventto].txnvisited[event.txn.txnid] = True
-        ls = node[event.eventto].peersarr.copy()
+        nodes[event.eventto].txnvisited[event.txn.txnid] = True
+        ls = nodes[event.eventto].peersarr.copy()
         ls.remove(event.eventfrom)
         for i in ls:
+            print("sending transactions to :%s"%i)
             latency = calculateLatency(event.eventto, i, "txn")
             heappush(heap, Event(currentTime+latency, "receiveTxn", event.eventto, i, event.txn, None, None))
     elif (event.type == "createBlk"):
@@ -134,37 +138,37 @@ while(currentTime<simulationTime):
         #     #Just add it to the blockchain to show fork ====== remaining
         #     # createBlkEvent(currentTime, event.eventfrom, node[event.eventfrom].level+1)
         #     continue
-        blk = node[event.eventfrom].generateBlock()
-        node[event.eventfrom].blkvisited[blk.blkid] = True
+        blk = nodes[event.eventfrom].generateBlock()
+        nodes[event.eventfrom].blkvisited[blk.blkid] = True
         # Creating next block generation event for the same peer
         print("errror aaajaa")
         createBlkEvent(currentTime, event.eventfrom, event.level+1)
         # Sending blocks to other nodes
-        for i in node[event.eventfrom].peersarr:
+        for i in nodes[event.eventfrom].peersarr:
             latency = calculateLatency(event.eventfrom, i, "blk")
             heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventfrom, i, None, blk, event.level))
     elif (event.type == "receiveBlk"):
         # Verify transactions
         # node[event.eventto].verify(event.block)
         # Same receive block txns can also arrive, ignore it
-        if event.block.blkid in node[event.eventto].blkvisited:
+        if event.block.blkid in nodes[event.eventto].blkvisited:
             continue
-        node[event.eventto].blkvisited[event.block.blkid] = True
+        nodes[event.eventto].blkvisited[event.block.blkid] = True
         # If valid then add the block in the chain
-        node[event.eventto].updateChain(event.block)
+        nodes[event.eventto].updateChain(event.block)
         # Creating next block generation event for the same peer
         createBlkEvent(currentTime, event.eventto, event.level+1)
 
-        node[event.eventto].blkvisited[event.block.blkid] = True
-        ls = node[event.eventto].peersarr.copy()
+        nodes[event.eventto].blkvisited[event.block.blkid] = True
+        ls = nodes[event.eventto].peersarr.copy()
         ls.remove(event.eventfrom)
         for i in ls:
             latency = calculateLatency(event.eventto, i, "blk")
             heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventto, i, None, event.block, event.level))
 
-    print(event)    
+    # print(event)    
 
 
-for nd in node:
+for nd in nodes:
     nd.showBlockchain()
 dot.render('doctest-output/round-table.gv', view=True)  # doctest: +SKIP

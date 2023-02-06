@@ -57,38 +57,41 @@ class Node:
         self.register[hash]=blk
         return blk
 
-    def updateChain(self, block):
+    def updateChain(self, blk):
+        blkChain = self.blockchain
+        prevBlkId = blk.prevblkid
+        
         self.level += 1
-        if self.currentHash not in self.blockchain:
-            self.blockchain[self.currentHash] = []
-        self.blockchain[block.prevblkid].append(block)
-        self.currentHash = block.blkid
-        for i in block.txnsarr:
-            # Updating balance of nodes
-            self.balance[i.sender] -= i.amount
-            # Removing used txns from unspent transactions 
-            if i in self.unspenttxnsarr:
-                self.unspenttxnsarr.remove(i)
+        # if block hash not key blockchain dictionary
+        if self.currentHash not in blkChain:
+            blkChain[self.currentHash] = []
 
+        # if  Previous block hash not key blockchain dictionary
+        if prevBlkId not in blkChain:
+            blkChain[prevBlkId].append(blk)
+
+        blkChain[prevBlkId].append(blk)
+        
+        self.currentHash = blk.blkid
+
+        for txn in blk.txnsarr:
+            # Updating balance of nodes
+            self.balance[txn.sender] -= txn.amount
+            # Removing used txns from unspent transactions 
+            if txn in self.unspenttxnsarr:
+                self.unspenttxnsarr.remove(txn)
     
     def showBlockchain(self):
         visited = []
-        for key,val in self.blockchain.items():
-            print(key,val)
-            if len(val)>1:
-                print("FICCCCCLLLLLLKKKKK")
-                for xx in val:
-                    print(xx.blkid)
-        # dot = graphviz.Graph(comment='Block Chain')
-        # graphviz.Graph
 
-        for nds in self.blockchain.keys():
-            dot.node(str(self.nodeid)+"_Node_"+nds)
-        # self.blockchain["5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"].append(Block("98989","8989","5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"))
-        # dot.edge(str(self.nodeid)+"_Node_"+"5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",str(self.nodeid)+"new fork")
+        # create Nodes for the graph
+        for node in self.blockchain.keys():
+            dot.node(str(self.nodeid)+"_Node_"+node)
+       
         def dfs(currId):
             if (currId) not in self.blockchain.keys():
                 return 
+            
             for next in self.blockchain[currId]:
                 nextId = next.blkid
                 if (str(self.nodeid)+"_Node_"+nextId) not in visited:
