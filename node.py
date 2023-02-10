@@ -15,18 +15,19 @@ class Node:
         self.low = low
         self.txnvisited = {}
         self.blkvisited = {}
+        self.peers=peers
         self.balance = [1000]*peers
         self.level = 0
         # self.currentHash = str(hashlib.sha256("0".encode()).hexdigest())
         self.currentHash = "0"
         self.register={}
         self.genesis=self.getGenesis()
-    
+        
 
     def getGenesis(self):
         blk=Block("0",None,None)
         blk.balance=[self.peers]*1000
-        self.blockchain["0"]=blk
+        self.blockchain["0"]=[blk]
     
 
     
@@ -67,8 +68,8 @@ class Node:
             blkChain[self.currentHash] = []
 
         # if  Previous block hash not key blockchain dictionary
-        if prevBlkId not in blkChain:
-            blkChain[prevBlkId].append(blk)
+        if prevBlkId not in blkChain.keys() :
+            blkChain[prevBlkId] = []
 
         blkChain[prevBlkId].append(blk)
         
