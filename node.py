@@ -2,6 +2,7 @@ import random
 import hashlib
 from block import Block
 from graphy import dot
+from transaction import Txn
 # import graphviz  # doctest: +NO_EXE
 
 class Node:
@@ -16,7 +17,7 @@ class Node:
         self.txnvisited = {}
         self.blkvisited = {}
         self.peers=peers
-        self.balance = [1000]*peers
+        # self.balance = [1000]*peers
         self.level = 0
         # self.currentHash = str(hashlib.sha256("0".encode()).hexdigest())
         self.currentHash = "0"
@@ -26,11 +27,24 @@ class Node:
 
     def getGenesis(self):
         blk=Block("0",None,None)
-        blk.balance=[self.peers]*1000
+        blk.balance=[1000]*self.peers
         self.blockchain["0"]=[blk]
     
 
-    
+    def verify(self, block):
+        temp_balance = self.register[self.currentHash].balance.copy()
+        incoming_txns = block.txnsarr
+        for txn in incoming_txns:
+            if txn.sender == -1:
+                temp_balance[txn.receiver] += txn.amount
+                continue
+            if temp_balance[txn.sender]<txn.amount:
+                return False
+            temp_balance[txn.sender] -= txn.amount
+            temp_balance[txn.receiver] += txn.amount
+        if temp_balance != block.balance:
+            return False
+        return True
 
 
 
@@ -40,22 +54,26 @@ class Node:
     def generateBlock(self):
         txns = random.sample(self.unspenttxnsarr, 2)
         msg = ""
+        current_block = self.register[self.currentHash]
+        temp_balances = current_block.txnsarr.copy()
         for i in txns:
+            temp_balances[i.sender] -= i.amount
+            temp_balances[i.receiver] += i.amount
             msg += i.txnstr
-        # balance = self.register[self.currentHash].balance
-        # for txn in txns:
-        #     if txn.sender not in balance:
-        #         balance[txn.sender] = 1000
-        #     if txn.receiver not in self.balance:
-        #         balance[txn.receiver] = 1000
-        #     balance[txn.sender] -= txn.amount
-        #     balance[txn.receiver] += txn.amount
 
+        coinbase_txn = Txn(-1, self.nodeid, 50)
+        temp_balances[self.nodeid] += 50
+        coinbase_txn.txnstr = str(coinbase_txn.txnid)+ ": " + str(self.nodeid) + " mines 50 coins"
+        txns.append(coinbase_txn)
         # Add some extra random values to the string --later
+        msg += coinbase_txn.txnstr
         hash = str(hashlib.sha256(msg.encode()).hexdigest())
         blk = Block(hash, txns, self.currentHash)
+        blk.balance = temp_balances
+        blk.creatorid = self.nodeid
         self.updateChain(blk)
         self.register[hash]=blk
+
         return blk
 
     def updateChain(self, blk):

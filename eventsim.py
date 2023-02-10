@@ -160,6 +160,7 @@ while len(heap)>0:
     
     elif (event.type == "receiveBlk"):
         # Verify transactions
+        flag = nodes[event.eventto].verify(event.block)
         # node[event.eventto].verify(event.block)
         # Same receive block txns can also arrive, ignore it
         blk = event.block
