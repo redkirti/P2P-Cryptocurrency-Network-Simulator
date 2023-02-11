@@ -3,7 +3,6 @@ import hashlib
 from block import Block
 from graphy import dot
 from transaction import Txn
-# import graphviz  # doctest: +NO_EXE
 
 class Node:
     def __init__(self, nodeid, peersarr, blockchain, unspenttxnsarr, alltxnsarr, slow, low, peers):
@@ -23,16 +22,18 @@ class Node:
         self.currentHash = "0"
         self.register={}
         self.genesis=self.getGenesis()
+        self.dumped_blocks = []
         
 
     def getGenesis(self):
-        blk=Block("0",None,None)
-        blk.balance=[1000]*self.peers
+        blk=Block("0",[],None)
+        blk.balance=[10]*self.peers
         self.blockchain["0"]=[blk]
+        self.register["0"]=blk
     
 
     def verify(self, block):
-        temp_balance = self.register[self.currentHash].balance.copy()
+        temp_balance = self.register[block.prevblkid].balance.copy()
         incoming_txns = block.txnsarr
         for txn in incoming_txns:
             if txn.sender == -1:
@@ -43,6 +44,7 @@ class Node:
             temp_balance[txn.sender] -= txn.amount
             temp_balance[txn.receiver] += txn.amount
         if temp_balance != block.balance:
+            self.dumped_blocks.append(block)
             return False
         return True
 
@@ -55,7 +57,7 @@ class Node:
         txns = random.sample(self.unspenttxnsarr, 2)
         msg = ""
         current_block = self.register[self.currentHash]
-        temp_balances = current_block.txnsarr.copy()
+        temp_balances = current_block.balance.copy()
         for i in txns:
             temp_balances[i.sender] -= i.amount
             temp_balances[i.receiver] += i.amount
@@ -92,10 +94,11 @@ class Node:
         blkChain[prevBlkId].append(blk)
         
         self.currentHash = blk.blkid
+        self.register[blk.blkid] = blk
 
         for txn in blk.txnsarr:
             # Updating balance of nodes
-            self.balance[txn.sender] -= txn.amount
+            # self.balance[txn.sender] -= txn.amount
             # Removing used txns from unspent transactions 
             if txn in self.unspenttxnsarr:
                 self.unspenttxnsarr.remove(txn)
