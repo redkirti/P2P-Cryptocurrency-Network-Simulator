@@ -159,16 +159,21 @@ class Node:
                 return
             visited.append(currId)
             temp.append(currId)
+
             if currId not in self.blockchain:
                 self.blockchain[currId] = []
+
             for next in self.blockchain[currId]:
                 nextId = next.blkid
                 if (nextId) not in visited:
                     dfs(temp,nextId)
-            if len(visited)>len(self.longestChain):
-                self.longestChain = visited.copy()
+            
+            if len(temp)>len(self.longestChain):
+                self.longestChain = temp.copy()
+            temp.pop()
         dfs([],"0")
         self.stats["longestChainLen"] = len(self.longestChain)
+        # print(self.longestChain)
         lastNode = None
         for nodeVal in self.longestChain:
             currNode = self.hashMapping[str(self.nodeid)+"_Node_"+nodeVal]
