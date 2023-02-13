@@ -3,4 +3,5 @@ class Block:
         self.blkid = blkid
         self.txnsarr = txnsarr
         self.prevblkid = prevblkid
-        self.balance = {}
+        self.creatorid = None
+        self.balance = []
