@@ -1,7 +1,7 @@
 import random
 import hashlib
 from block import Block
-from graphy import dot
+from graphy import dot,longestChain
 # import graphviz  # doctest: +NO_EXE
 
 class Node:
@@ -22,12 +22,21 @@ class Node:
         self.currentHash = "0"
         self.register={}
         self.genesis=self.getGenesis()
-        
+        self.hashMapping = {}
+        self.currNo = {}
+        self.stats = {
+                "totalTransactions" : 0 ,
+                "totalBlocksTree" : 0,
+                "invalidBlocks" : 0,
+                "totalBlockLongestChain" : 0,
+                "longestChainLen":0
+        }
 
     def getGenesis(self):
         blk=Block("0",None,None)
         blk.balance=[self.peers]*1000
         self.blockchain["0"]=[blk]
+        self.register["0"] = blk
     
 
     
@@ -71,6 +80,7 @@ class Node:
         if prevBlkId not in blkChain.keys() :
             blkChain[prevBlkId] = []
 
+        self.register[blk.blkid]=blk
         blkChain[prevBlkId].append(blk)
         
         self.currentHash = blk.blkid
@@ -82,31 +92,92 @@ class Node:
             if txn in self.unspenttxnsarr:
                 self.unspenttxnsarr.remove(txn)
     
+    
     def showBlockchain(self):
         visited = []
-
+       
+        self.currNo = 1
         # create Nodes for the graph
         for node in self.blockchain.keys():
-            dot.node(str(self.nodeid)+"_Node_"+node)
-       
+            self.hashMapping[str(self.nodeid)+"_Node_"+node]="_Node_"+str(self.nodeid)+"__"+str(self.currNo)
+            self.currNo+=1
+            dot.node(self.hashMapping[str(self.nodeid)+"_Node_"+node])
+
         def dfs(currId):
+            if currId != "0":
+                currBlock = self.register[currId]
+                self.stats["totalTransactions"]+= len(currBlock.txnsarr)
+
             if (currId) not in self.blockchain.keys():
                 return 
             
             for next in self.blockchain[currId]:
                 nextId = next.blkid
-                if (str(self.nodeid)+"_Node_"+nextId) not in visited:
-                    print("connecting curr   "+currId," ---->",nextId)
-                    dot.edge((str(self.nodeid)+"_Node_"+currId),(str(self.nodeid)+"_Node_"+nextId))
-                    visited.append((str(self.nodeid)+"_Node_"+nextId))
+ 
+                if (str(self.nodeid)+"_Node_"+nextId) not in self.hashMapping:
+                    self.hashMapping[str(self.nodeid)+"_Node_"+nextId]="_Node_"+str(self.nodeid)+"__"+str(self.currNo)
+                    self.currNo+=1
+
+                if  (self.hashMapping[str(self.nodeid)+"_Node_"+nextId]) not in visited:
+                    dot.edge(self.hashMapping[(str(self.nodeid)+"_Node_"+currId)],self.hashMapping[(str(self.nodeid)+"_Node_"+nextId)])
+                    visited.append(self.hashMapping[(str(self.nodeid)+"_Node_"+nextId)])
                     dfs(nextId)
+
         for currNode in self.blockchain.keys():
             if currNode not in visited:
-                visited.append(str(self.nodeid)+"_Node_"+currNode)
+                visited.append(self.hashMapping[str(self.nodeid)+"_Node_"+currNode])
                 dfs(currNode)
         # doctest_mark_exe()
-        print("--------------------_X------------------------")
 
         # dot.render('doctest-output/round-table.gv', view=True)  # doctest: +SKIP
         
+    def findLongestChain(self):
+        self.longestChain = []
+        visited = []
+        def dfs(temp,currId):
+            if currId in visited:
+                return
+            visited.append(currId)
+            temp.append(currId)
+            if currId not in self.blockchain:
+                self.blockchain[currId] = []
+            for next in self.blockchain[currId]:
+                nextId = next.blkid
+                if (nextId) not in visited:
+                    dfs(temp,nextId)
+            if len(visited)>len(self.longestChain):
+                self.longestChain = visited.copy()
+        dfs([],"0")
+        self.stats["longestChainLen"] = len(self.longestChain)
+        lastNode = None
+        for nodeVal in self.longestChain:
+            currNode = self.hashMapping[str(self.nodeid)+"_Node_"+nodeVal]
+            longestChain.node(currNode)
+            if lastNode:
+                longestChain.edge(lastNode, currNode)
+            lastNode = currNode
+        
+    def printStats(self):
+        print("------------------Node Statistics %s-------------------"%self.nodeid)
+        totalTransactions = self.stats["totalTransactions"]
+        totalBlocksTree = 0
+        
+        invalidBlocks = 0
 
+        totalBlockLongestChain = self.stats["longestChainLen"]
+
+        totalBlocksInBlockChain = list(self.blockchain.keys())
+        for block in self.blockchain.values():
+            for crrBlock in block:
+                totalBlocksInBlockChain.append(crrBlock.blkid)
+        
+        totalBlocksTree = len(set(totalBlocksInBlockChain))
+        print("Total Blocks in Longest Chain:",totalBlockLongestChain)
+        print("Total Transactions:",totalTransactions)
+        print("Total Blocks in Tree:",totalBlocksTree)
+        # print("Total Transactions:",totalTransactions)
+        # self.stats["longestChainLen"] =
+
+        # for nodes in self.block:
+
+        print("-------------------------x--------------------------")

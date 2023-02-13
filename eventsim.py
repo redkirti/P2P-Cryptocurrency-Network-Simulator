@@ -16,7 +16,7 @@ from initialize import initialize
 from heapq import *
 from event import Event
 from transaction import Txn
-from graphy import dot
+from graphy import dot,longestChain
 from block import Block
 
 #No of peers
@@ -107,8 +107,8 @@ currentTime = 0
 txncreationTime = 0
 
 # Main simulation function
-# while(currentTime<simulationTime):
-while len(heap)>0:
+while(currentTime<simulationTime):
+# while len(heap)>0:
     event = heappop(heap)
     currentTime = event.timestamp
     if(event.type == "createTxn"):
@@ -138,11 +138,12 @@ while len(heap)>0:
     elif (event.type == "createBlk"):
 
         # Check if a block exists at the same level in that node, if it exists then return null else create the blk
-        if nodes[event.eventfrom].currentHash!=event.tempCurr:
-            Tx = currentTime + np.random.exponential(scale=0.5) 
-            if currentTime<simulationTime:
-                createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)
-
+        # if nodes[event.eventfrom].currentHash!=event.tempCurr:
+        #     Tx = currentTime + np.random.exponential(scale=0.5) 
+        #     # # # if currentTime<simulationTime:
+        #     createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)
+        #     continue
+        prevCurr = nodes[event.eventfrom].currentHash
         blk = nodes[event.eventfrom].generateBlock()
         
         print("Block created - Time : %s, Block ID : %s , Node Number: %s >>>>>>>>>>>>>>>>>>>>>>>>>>>"%(currentTime,blk.blkid,event.eventfrom) )
@@ -150,8 +151,9 @@ while len(heap)>0:
         Tx = currentTime + np.random.exponential(scale=0.5) 
 
         # Creating next block generation event for the same peer
-        if currentTime<simulationTime:
-            createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)
+        # if currentTime<simulationTime:
+        # event.tempCurr = prevCurr
+        createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)
         
         # Sending blocks to other nodes
         for i in nodes[event.eventfrom].peersarr:
@@ -169,16 +171,17 @@ while len(heap)>0:
             continue
         
         print(">>>>>>>>>>>>>>>Block Recived - Time : %s, Block ID : %s , Node Number: %s"%(currentTime,blk.blkid,event.eventto) )
-        if currentTime<simulationTime:
-            createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)        
+        # if currentTime<simulationTime:
+        # event.tempCurr = blk.blkid
+        # createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)        
         nodes[event.eventto].blkvisited[event.block.blkid] = True
         
         # If valid then add the block in the chain
         nodes[event.eventto].updateChain(event.block)
         
         # Creating next block generation event for the same peer
-        if currentTime<simulationTime:
-            createBlkEvent(currentTime, event.eventto, event.level+1)
+        # if currentTime<simulationTime:
+        createBlkEvent(currentTime, event.eventto, event.level+1)
 
         nodes[event.eventto].blkvisited[event.block.blkid] = True
         ls = nodes[event.eventto].peersarr.copy()
@@ -192,4 +195,7 @@ while len(heap)>0:
 
 for nd in nodes:
     nd.showBlockchain()
+    nd.findLongestChain()
+    nd.printStats()
 dot.render('doctest-output/round-table.gv', view=True)  # doctest: +SKIP
+longestChain.render('doctest-output/longest-chain-table.gv', view=True)  # doctest: +SKIP
