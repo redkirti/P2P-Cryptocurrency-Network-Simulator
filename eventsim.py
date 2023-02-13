@@ -142,12 +142,14 @@ while currentTime<simulationTime:
         # Check if a block exists at the same level in that node, if it exists then return null else create the blk
 
         prevCurr = nodes[event.eventfrom].currentHash
-        if nodes[event.eventfrom].currentHash!=event.tempCurr:
+        if prevCurr!=event.tempCurr:
             # Tx = currentTime + np.random.exponential(scale=0.5)
             # createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)
             continue
 
         blk = nodes[event.eventfrom].generateBlock()
+        nodes[event.eventfrom].level += 1
+        nodes[event.eventfrom].currentHash = blk.blkid
         
         print("Block created - Time : %s, Block ID : %s , Node Number: %s >>>>>>>>>>>>>>>>>>>>>>>>>>>"%(currentTime,blk.blkid,event.eventfrom) )
         nodes[event.eventfrom].blkvisited[blk.blkid] = True
@@ -162,6 +164,9 @@ while currentTime<simulationTime:
             heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventfrom, i, None, blk, event.level))
     
     elif (event.type == "receiveBlk"):
+        if event.block.blkid in nodes[event.eventto].blkvisited:
+            continue
+        nodes[event.eventto].blkvisited[event.block.blkid] = True
         # Verify transactions
         flag = nodes[event.eventto].verify(event.block)
         if flag == False:
@@ -171,20 +176,20 @@ while currentTime<simulationTime:
         blk = event.block
         Tx = currentTime + np.random.exponential(scale=0.5) 
 
-        if event.block.blkid in nodes[event.eventto].blkvisited:
-            continue
         
         print(">>>>>>>>>>>>>>>Block Recived - Time : %s, Block ID : %s , Node Number: %s"%(currentTime,blk.blkid,event.eventto) )
         # createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)        
-        nodes[event.eventto].blkvisited[event.block.blkid] = True
+
+
+        if nodes[event.eventto].level == event.level:
+            # Update current hash and create a new create block event
+            nodes[event.eventto].currentHash = blk.blkid
+            nodes[event.eventto].level += 1
+            # Creating next block generation event for the same peer
+            createBlkEvent(Tx, event.eventto, event.level+1)
         
         # If valid then add the block in the chain
         nodes[event.eventto].updateChain(event.block)
-        
-        # Creating next block generation event for the same peer
-        createBlkEvent(currentTime, event.eventto, event.level+1)
-
-        nodes[event.eventto].blkvisited[event.block.blkid] = True
         ls = nodes[event.eventto].peersarr.copy()
         ls.remove(event.eventfrom)
         for i in ls:

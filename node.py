@@ -17,7 +17,7 @@ class Node:
         self.blkvisited = {}
         self.peers=peers
         # self.balance = [1000]*peers
-        self.level = 0
+        self.level = 1
         # self.currentHash = str(hashlib.sha256("0".encode()).hexdigest())
         self.currentHash = "0"
         self.register={}
@@ -83,6 +83,7 @@ class Node:
         blk = Block(hash, txns, self.currentHash)
         blk.balance = temp_balances
         blk.creatorid = self.nodeid
+        self.level += 1
         self.updateChain(blk)
         self.register[hash]=blk
 
@@ -92,10 +93,9 @@ class Node:
         blkChain = self.blockchain
         prevBlkId = blk.prevblkid
         
-        self.level += 1
-        # if block hash not key blockchain dictionary
-        if self.currentHash not in blkChain:
-            blkChain[self.currentHash] = []
+        # # if block hash not key blockchain dictionary
+        # if self.currentHash not in blkChain:
+        #     blkChain[self.currentHash] = []
 
         # if  Previous block hash not key blockchain dictionary
         if prevBlkId not in blkChain.keys() :
@@ -104,15 +104,15 @@ class Node:
         self.register[blk.blkid]=blk
         blkChain[prevBlkId].append(blk)
         
-        self.currentHash = blk.blkid
-        self.register[blk.blkid] = blk
+        # self.currentHash = blk.blkid
+        # self.register[blk.blkid] = blk
 
-        for txn in blk.txnsarr:
-            # Updating balance of nodes
-            # self.balance[txn.sender] -= txn.amount
-            # Removing used txns from unspent transactions 
-            if txn in self.unspenttxnsarr:
-                self.unspenttxnsarr.remove(txn)
+        # for txn in blk.txnsarr:
+        #     # Updating balance of nodes
+        #     # self.balance[txn.sender] -= txn.amount
+        #     # Removing used txns from unspent transactions 
+        #     if txn in self.unspenttxnsarr:
+        #         self.unspenttxnsarr.remove(txn)
     
     
     def showBlockchain(self):
@@ -182,7 +182,7 @@ class Node:
         totalTransactions = self.stats["totalTransactions"]
         totalBlocksTree = 0
         
-        invalidBlocks = 0
+        invalidBlocks = len(self.dumped_blocks)
 
         totalBlockLongestChain = self.stats["longestChainLen"]
 
@@ -195,6 +195,7 @@ class Node:
         print("Total Blocks in Longest Chain:",totalBlockLongestChain)
         print("Total Transactions:",totalTransactions)
         print("Total Blocks in Tree:",totalBlocksTree)
+        print("Total Invalid Blocks Dumped By node:",invalidBlocks)
         # print("Total Transactions:",totalTransactions)
         # self.stats["longestChainLen"] =
 
