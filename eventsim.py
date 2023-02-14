@@ -1,13 +1,3 @@
-# random peer connections in the network
-# random transaction generation by each peer with a value chosen from poisson distribution
-# broadcasting the messages (transactions/blocks) in a loopless manner
-# simulating network latencies based on propogation delay, message size, link speeds of nodes, and queing delay
-# random block creating with arrival times chosen from a poisson distribution
-# propogation of blocks on the block chain
-# addition of blocks to a local blockchain of a node and resolution of forks based on block arrival time, the chain with first arrived one is extended.
-# New line added
-
-
 import sys
 from node import Node
 import random
@@ -46,9 +36,6 @@ for i in range(peers):
         else:
             rho[i][j] = 0
 
-# for i in rho:
-#     print(i)
-
 
 
 
@@ -68,7 +55,7 @@ def createBlkEvent(currentTime, i, level):
         power = hpower
     else:
         power = hpower * 10
-    stamp = np.random.exponential(scale=(0.5/power))
+    stamp = np.random.exponential(scale=(5/power))
     print(stamp)
     e = Event(currentTime + stamp, "createBlk", i, -1, None, None, level)
     e.tempCurr = nodes[i].currentHash
@@ -88,9 +75,6 @@ def generateTxn(sender):
     txn = Txn(sender, receiver, amount)
     return txn
 
-# # Creating a Block
-# def generateBlock(sender):
-#     pass
 
 #Calculating latencies for different links
 def calculateLatency(sender, receiver, type):
@@ -196,9 +180,6 @@ while currentTime<simulationTime:
             else:
                 # Creating next block generation event for the same peer
                 createBlkEvent(Tx, event.eventto, event.level+1)
-
-            
-
 
         ls = nodes[event.eventto].peersarr.copy()
         ls.remove(event.eventfrom)
