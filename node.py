@@ -31,25 +31,32 @@ class Node:
                 "totalBlockLongestChain" : 0,
                 "longestChainLen":0
         }
-
+        self.cached_blocks = {}
         self.dumped_blocks = []
         
 
     def getGenesis(self):
         blk=Block("0",[],None)
-        blk.balance=[10]*self.peers
+        blk.balance=[100]*self.peers
         self.blockchain["0"]=[blk]
         self.register["0"]=blk
     
 
     def verify(self, block):
+        if block.prevblkid not in self.register:
+            if block.prevblkid not in self.cached_blocks:
+                self.cached_blocks[block.prevblkid] = []
+            self.cached_blocks[block.prevblkid].append(block)
+            return False
         temp_balance = self.register[block.prevblkid].balance.copy()
         incoming_txns = block.txnsarr
         for txn in incoming_txns:
+            print("Helllooooooooooooo")
             if txn.sender == -1:
                 temp_balance[txn.receiver] += txn.amount
                 continue
             if temp_balance[txn.sender]<txn.amount:
+                self.dumped_blocks.append(block)
                 return False
             temp_balance[txn.sender] -= txn.amount
             temp_balance[txn.receiver] += txn.amount
@@ -64,7 +71,10 @@ class Node:
     # Still have to add coinbase txn in the block generation function....
 
     def generateBlock(self):
-        txns = random.sample(self.unspenttxnsarr, 2)
+        num = 1000
+        if len(self.unspenttxnsarr) < 1000:
+            num = len(self.unspenttxnsarr)
+        txns = random.sample(self.unspenttxnsarr, num)
         msg = ""
         current_block = self.register[self.currentHash]
         temp_balances = current_block.balance.copy()
@@ -103,6 +113,20 @@ class Node:
 
         self.register[blk.blkid]=blk
         blkChain[prevBlkId].append(blk)
+
+        for i in self.cached_blocks:
+            if i in self.register:
+                if i not in self.blockchain:
+                    self.blockchain[i] = []
+                ls = []
+                for k in self.cached_blocks[i]:
+                    flag = self.verify(k)
+                    if flag == True:
+                        ls.append(k)
+                self.blockchain[i].extend(ls)
+                for j in ls:
+                    self.register[j.blkid] = j
+                del self.cached_blocks[i]
         
         # self.currentHash = blk.blkid
         # self.register[blk.blkid] = blk
