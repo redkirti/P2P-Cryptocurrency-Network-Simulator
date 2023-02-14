@@ -37,7 +37,7 @@ class Node:
 
     def getGenesis(self):
         blk=Block("0",[],None)
-        blk.balance=[100]*self.peers
+        blk.balance=[10000]*self.peers
         self.blockchain["0"]=[blk]
         self.register["0"]=blk
     
@@ -51,7 +51,7 @@ class Node:
         temp_balance = self.register[block.prevblkid].balance.copy()
         incoming_txns = block.txnsarr
         for txn in incoming_txns:
-            print("Helllooooooooooooo")
+            # print("Helllooooooooooooo")
             if txn.sender == -1:
                 temp_balance[txn.receiver] += txn.amount
                 continue
@@ -99,6 +99,44 @@ class Node:
 
         return blk
 
+    def cache_function(self, blkid):
+        mx = 0
+        blkhash = ""
+        q = []
+        q.append(blkid)
+        while(len(q)>0):
+            id = q.pop(0)
+            if(mx<self.register[id].level):
+                mx = self.register[id].level
+                blkhash = id
+            if id in self.cached_blocks:
+                if id not in self.blockchain:
+                    self.blockchain[id] = []
+                for blk in self.cached_blocks[id]:
+                    flag = self.verify(blk)
+                    if flag == True:
+                        self.blockchain[id].append(blk)
+                        self.register[blk.blkid] = blk
+                        q.append(blk.blkid)
+                    else:
+                        self.dumped_blocks.append(blk)
+        return mx, blkhash
+        
+        # for i in self.cached_blocks:
+        #     if i in self.register:
+        #         if i not in self.blockchain:
+        #             self.blockchain[i] = []
+        #         ls = []
+        #         for k in self.cached_blocks[i]:
+        #             flag = self.verify(k)
+        #             if flag == True:
+        #                 ls.append(k)
+        #         self.blockchain[i].extend(ls)
+        #         for j in ls:
+        #             self.register[j.blkid] = j
+        #         del self.cached_blocks[i]
+
+
     def updateChain(self, blk):
         blkChain = self.blockchain
         prevBlkId = blk.prevblkid
@@ -114,29 +152,16 @@ class Node:
         self.register[blk.blkid]=blk
         blkChain[prevBlkId].append(blk)
 
-        for i in self.cached_blocks:
-            if i in self.register:
-                if i not in self.blockchain:
-                    self.blockchain[i] = []
-                ls = []
-                for k in self.cached_blocks[i]:
-                    flag = self.verify(k)
-                    if flag == True:
-                        ls.append(k)
-                self.blockchain[i].extend(ls)
-                for j in ls:
-                    self.register[j.blkid] = j
-                del self.cached_blocks[i]
         
         # self.currentHash = blk.blkid
         # self.register[blk.blkid] = blk
 
-        # for txn in blk.txnsarr:
-        #     # Updating balance of nodes
-        #     # self.balance[txn.sender] -= txn.amount
-        #     # Removing used txns from unspent transactions 
-        #     if txn in self.unspenttxnsarr:
-        #         self.unspenttxnsarr.remove(txn)
+        for txn in blk.txnsarr:
+            # Updating balance of nodes
+            # self.balance[txn.sender] -= txn.amount
+            # Removing used txns from unspent transactions 
+            if txn in self.unspenttxnsarr:
+                self.unspenttxnsarr.remove(txn)
     
     
     def showBlockchain(self):

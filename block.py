@@ -5,3 +5,4 @@ class Block:
         self.prevblkid = prevblkid
         self.creatorid = None
         self.balance = []
+        self.level = 1

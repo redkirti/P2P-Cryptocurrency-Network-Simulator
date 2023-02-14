@@ -59,7 +59,7 @@ while(currentTime<simulationTime):
     sender = random.randint(0,peers-1)
     heappush(heap, Event(currentTime, "createTxn", sender, -1, None, None, None))
 
-currentTime = 0
+currentTime = 5
 # Filling queue with block sending events
 
 def createBlkEvent(currentTime, i, level):
@@ -68,7 +68,7 @@ def createBlkEvent(currentTime, i, level):
         power = hpower
     else:
         power = hpower * 10
-    stamp = np.random.exponential(scale=(1/power))
+    stamp = np.random.exponential(scale=(0.5/power))
     print(stamp)
     e = Event(currentTime + stamp, "createBlk", i, -1, None, None, level)
     e.tempCurr = nodes[i].currentHash
@@ -148,6 +148,7 @@ while currentTime<simulationTime:
             continue
 
         blk = nodes[event.eventfrom].generateBlock()
+        blk.level = event.level+1
         nodes[event.eventfrom].level += 1
         nodes[event.eventfrom].currentHash = blk.blkid
         
@@ -171,6 +172,9 @@ while currentTime<simulationTime:
         flag = nodes[event.eventto].verify(event.block)
         if flag == False:
             continue
+
+        # If valid then add the block in the chain
+        nodes[event.eventto].updateChain(event.block)
         # node[event.eventto].verify(event.block)
         # Same receive block txns can also arrive, ignore it
         blk = event.block
@@ -180,16 +184,22 @@ while currentTime<simulationTime:
         print(">>>>>>>>>>>>>>>Block Recived - Time : %s, Block ID : %s , Node Number: %s"%(currentTime,blk.blkid,event.eventto) )
         # createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)        
 
+        mx, blkhash = nodes[event.eventto].cache_function(event.block.blkid)
 
         if nodes[event.eventto].level == event.level:
             # Update current hash and create a new create block event
             nodes[event.eventto].currentHash = blk.blkid
             nodes[event.eventto].level += 1
-            # Creating next block generation event for the same peer
-            createBlkEvent(Tx, event.eventto, event.level+1)
-        
-        # If valid then add the block in the chain
-        nodes[event.eventto].updateChain(event.block)
+            if mx > nodes[event.eventto].level:
+                nodes[event.eventto].currentHash = blkhash
+                createBlkEvent(Tx, event.eventto, mx+1)
+            else:
+                # Creating next block generation event for the same peer
+                createBlkEvent(Tx, event.eventto, event.level+1)
+
+            
+
+
         ls = nodes[event.eventto].peersarr.copy()
         ls.remove(event.eventfrom)
         for i in ls:
