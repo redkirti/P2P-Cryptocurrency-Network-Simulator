@@ -23,7 +23,7 @@ Replace the argumens with the following:
 - [arg5] : Interarrival time of blocks
 - [arg6] : Simulation Time
 
-output.txt contains the results of the simulation
+output.txt contains the results of the simulation  
 doctest-output folder contains the blockchains of the nodes along with their longest chains.
 
 Changing the above parameters produces different block trees which are used for analysis.
