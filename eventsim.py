@@ -16,7 +16,13 @@ slow = int(sys.argv[2])
 #Percent of peers with low CPU
 lowCPU = int(sys.argv[3])
 
-simulationTime = int(sys.argv[4])
+#interarrival time for Transactions
+Tx=int(sys.argv[4])
+
+# interarrival time for Blocks
+I=int(sys.argv[5])
+
+simulationTime = int(sys.argv[6])
 
 nodes, hpower = initialize(peers, slow, lowCPU)
 heap = []
@@ -42,7 +48,7 @@ for i in range(peers):
 # Filling queue with transaction sending events
 while(currentTime<simulationTime):
     #Scale is the mean of the exponential distribution
-    currentTime = currentTime + np.random.exponential(scale=0.5) 
+    currentTime = currentTime + np.random.exponential(scale=Tx) 
     sender = random.randint(0,peers-1)
     heappush(heap, Event(currentTime, "createTxn", sender, -1, None, None, None))
 
@@ -55,7 +61,7 @@ def createBlkEvent(currentTime, i, level):
         power = hpower
     else:
         power = hpower * 10
-    stamp = np.random.exponential(scale=(5/power))
+    stamp = np.random.exponential(scale=(I/power))
     print(stamp)
     e = Event(currentTime + stamp, "createBlk", i, -1, None, None, level)
     e.tempCurr = nodes[i].currentHash
@@ -106,6 +112,7 @@ while currentTime<simulationTime:
             print("sending transactions from:%s -> to :%s"%(txn.sender,i))
             latency = calculateLatency(event.eventfrom, i, "txn")
             heappush(heap, Event(currentTime+latency, "receiveTxn", event.eventfrom, i, txn, None, None))
+
     elif(event.type == "receiveTxn"):
         if event.txn.txnid in nodes[event.eventto].txnvisited:
             continue
@@ -138,10 +145,10 @@ while currentTime<simulationTime:
         
         print("Block created - Time : %s, Block ID : %s , Node Number: %s >>>>>>>>>>>>>>>>>>>>>>>>>>>"%(currentTime,blk.blkid,event.eventfrom) )
         nodes[event.eventfrom].blkvisited[blk.blkid] = True
-        Tx = currentTime + np.random.exponential(scale=0.5) 
+        # time_ = currentTime + np.random.exponential(scale=Tb) 
 
         # Creating next block generation event for the same peer
-        createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)
+        createBlkEvent(currentTime, event.eventfrom, event.level+1)
         
         # Sending blocks to other nodes
         for i in nodes[event.eventfrom].peersarr:
@@ -162,7 +169,7 @@ while currentTime<simulationTime:
         # node[event.eventto].verify(event.block)
         # Same receive block txns can also arrive, ignore it
         blk = event.block
-        Tx = currentTime + np.random.exponential(scale=0.5) 
+        # time_ = currentTime + np.random.exponential(scale=Tb) 
 
         
         print(">>>>>>>>>>>>>>>Block Recived - Time : %s, Block ID : %s , Node Number: %s"%(currentTime,blk.blkid,event.eventto) )
@@ -176,10 +183,10 @@ while currentTime<simulationTime:
             nodes[event.eventto].level += 1
             if mx > nodes[event.eventto].level:
                 nodes[event.eventto].currentHash = blkhash
-                createBlkEvent(Tx, event.eventto, mx+1)
+                createBlkEvent(currentTime, event.eventto, mx+1)
             else:
                 # Creating next block generation event for the same peer
-                createBlkEvent(Tx, event.eventto, event.level+1)
+                createBlkEvent(currentTime, event.eventto, event.level+1)
 
         ls = nodes[event.eventto].peersarr.copy()
         ls.remove(event.eventfrom)
