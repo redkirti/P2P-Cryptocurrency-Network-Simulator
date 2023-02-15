@@ -232,7 +232,7 @@ class Node:
         if self.stats["selfBlockLogestChain"] ==0: 
             print("Total Blocks Generated/blocks longest chain",None)
         else:
-            print("Total Blocks Generated/blocks longest chain", self.stats["blocksCreated"]/self.stats["selfBlockLogestChain"])
+            print("Blocks in longest chain/Total Blocks Generated", self.stats["selfBlockLogestChain"]/self.stats["blocksCreated"])
 
         # print("Total Transactions:",totalTransactions)
         # self.stats["longestChainLen"] =
