@@ -27,7 +27,9 @@ class Node:
                 "totalBlocksTree" : 0,
                 "invalidBlocks" : 0,
                 "totalBlockLongestChain" : 0,
-                "longestChainLen":0
+                "longestChainLen":0,
+                "selfBlockLogestChain":0,
+                "blocksCreated":0
         }
         self.cached_blocks = {}
         self.dumped_blocks = []
@@ -191,14 +193,22 @@ class Node:
         # print(self.longestChain)
         lastNode = None
         for nodeVal in self.longestChain:
+            if self.register[nodeVal].creatorid == self.nodeid:
+                self.stats["selfBlockLogestChain"]+=1
             currNode = self.hashMapping[str(self.nodeid)+"_Node_"+nodeVal]
             longestChain.node(currNode)
             if lastNode:
                 longestChain.edge(lastNode, currNode)
             lastNode = currNode
+        self.countBlocks()
         
+    def countBlocks(self):
+        for id,block in self.register.items():
+            if block.creatorid == self.nodeid:
+                self.stats["blocksCreated"]+=1
+        
+
     def printStats(self):
-        # print("---------------------slow nodes---------------")
         print("------------------Node Statistics %s-------------------"%self.nodeid)
         totalTransactions = self.stats["totalTransactions"]
         totalBlocksTree = 0
@@ -217,9 +227,17 @@ class Node:
         print("Total Transactions:",totalTransactions)
         print("Total Blocks in Tree:",totalBlocksTree)
         print("Total Invalid Blocks Dumped By node:",invalidBlocks)
+        print("Total Blocks Created by Node ", self.stats["blocksCreated"])
+        print("Total Blocks Created by Node in Longest Chain", self.stats["selfBlockLogestChain"])
+        if self.stats["selfBlockLogestChain"] ==0: 
+            print("Total Blocks Generated/blocks longest chain",None)
+        else:
+            print("Total Blocks Generated/blocks longest chain", self.stats["blocksCreated"]/self.stats["selfBlockLogestChain"])
+
         # print("Total Transactions:",totalTransactions)
         # self.stats["longestChainLen"] =
 
         # for nodes in self.block:
 
         print("-------------------------x--------------------------")
+
