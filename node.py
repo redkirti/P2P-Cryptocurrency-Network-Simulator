@@ -198,6 +198,7 @@ class Node:
             lastNode = currNode
         
     def printStats(self):
+        # print("---------------------slow nodes---------------")
         print("------------------Node Statistics %s-------------------"%self.nodeid)
         totalTransactions = self.stats["totalTransactions"]
         totalBlocksTree = 0

@@ -196,12 +196,15 @@ while currentTime<simulationTime:
 
     # print(event)    
 
-
+slow=[]
 for nd in nodes:
     print("Dumped by " + str(nd.nodeid) + ": ", end="")
     print(nd.dumped_blocks)
     nd.showBlockchain()
     nd.findLongestChain()
     nd.printStats()
+    if nd.slow==True :
+        slow.append(nd.nodeid)
+    print(slow)
 dot.render('doctest-output/round-table.gv', view=True)  # doctest: +SKIP
 longestChain.render('doctest-output/longest-chain-table.gv', view=True)  # doctest: +SKIP
