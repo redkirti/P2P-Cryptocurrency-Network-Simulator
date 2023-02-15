@@ -6,14 +6,16 @@ def initialize(peers, slow, lowCPU):
     lowNodes = random.sample(range(peers), int(lowCPU*peers/100))
     hpower = (1 / ((10*peers)- (9*len(lowNodes))))
 
-    # print(slowNodes)
-    # print(lowNodes)
+    print("Total Nodes: " + str(peers))
+    print("Slow Nodes: ", end="")
+    print(slowNodes)
+    print("Low CPU Nodes: ", end="")
+    print(lowNodes)
 
     # adj = np.random.rand(peers, peers)
     # adj[adj > 0.5] = 1
     # adj[adj <= 0.5] = 0
     # print(adj)
-
 
 
     visited = []
@@ -73,6 +75,7 @@ def initialize(peers, slow, lowCPU):
         fullnodes = set()
         create_graph()
 
+    print("Adjacency list of nodes: ")
     for i in connectednodes:
         print(i)
 

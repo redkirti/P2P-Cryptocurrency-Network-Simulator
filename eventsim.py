@@ -43,8 +43,6 @@ for i in range(peers):
             rho[i][j] = 0
 
 
-
-
 # Filling queue with transaction sending events
 while(currentTime<simulationTime):
     #Scale is the mean of the exponential distribution
@@ -53,8 +51,8 @@ while(currentTime<simulationTime):
     heappush(heap, Event(currentTime, "createTxn", sender, -1, None, None, None))
 
 currentTime = 5
-# Filling queue with block sending events
 
+# Function to create block genereation event considering hashing power of the node
 def createBlkEvent(currentTime, i, level):
     # print("Block event created - Time : %s, level : %s , Node Number: %s"%(currentTime,level,i) )
     if nodes[i].low == True:
@@ -62,11 +60,12 @@ def createBlkEvent(currentTime, i, level):
     else:
         power = hpower * 10
     stamp = np.random.exponential(scale=(I/power))
-    print(stamp)
+    # print(stamp)
     e = Event(currentTime + stamp, "createBlk", i, -1, None, None, level)
     e.tempCurr = nodes[i].currentHash
     heappush(heap, e)
 
+# Pushing intitial block generation events
 for i in range(peers):
     createBlkEvent(currentTime, i, 1)
         
@@ -104,12 +103,12 @@ while currentTime<simulationTime:
     event = heappop(heap)
     currentTime = event.timestamp
     if(event.type == "createTxn"):
-        print("Random Transaction created - Time : %s, From : %s "%(currentTime,event.eventfrom) )
+        # print("Random Transaction created - Time : %s, From : %s "%(currentTime,event.eventfrom) )
         txn = generateTxn(event.eventfrom)
         nodes[txn.sender].unspenttxnsarr.append(txn)
         # node[txn.sender].peersarr    : This represents nodes this node is connected to
         for i in nodes[txn.sender].peersarr:
-            print("sending transactions from:%s -> to :%s"%(txn.sender,i))
+            # print("sending transactions from:%s -> to :%s"%(txn.sender,i))
             latency = calculateLatency(event.eventfrom, i, "txn")
             heappush(heap, Event(currentTime+latency, "receiveTxn", event.eventfrom, i, txn, None, None))
 
@@ -117,7 +116,7 @@ while currentTime<simulationTime:
         if event.txn.txnid in nodes[event.eventto].txnvisited:
             continue
         # Adding txn to this node's list of txns
-        print("Transaction Recived - Time : %s, From : %s, To : %s "%(currentTime,event.eventfrom, event.eventto) )
+        # print("Transaction Recived - Time : %s, From : %s, To : %s "%(currentTime,event.eventfrom, event.eventto) )
 
         nodes[event.eventto].unspenttxnsarr.append(event.txn)
         
@@ -134,8 +133,6 @@ while currentTime<simulationTime:
 
         prevCurr = nodes[event.eventfrom].currentHash
         if prevCurr!=event.tempCurr:
-            # Tx = currentTime + np.random.exponential(scale=0.5)
-            # createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)
             continue
 
         blk = nodes[event.eventfrom].generateBlock()
@@ -166,13 +163,10 @@ while currentTime<simulationTime:
 
         # If valid then add the block in the chain
         nodes[event.eventto].updateChain(event.block)
-        # node[event.eventto].verify(event.block)
-        # Same receive block txns can also arrive, ignore it
-        blk = event.block
-        # time_ = currentTime + np.random.exponential(scale=Tb) 
 
-        
-        print(">>>>>>>>>>>>>>>Block Recived - Time : %s, Block ID : %s , Node Number: %s"%(currentTime,blk.blkid,event.eventto) )
+        # Same receive block txns can also arrive, ignore it
+        blk = event.block        
+        # print(">>>>>>>>>>>>>>>Block Recived - Time : %s, Block ID : %s , Node Number: %s"%(currentTime,blk.blkid,event.eventto) )
         # createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)        
 
         mx, blkhash = nodes[event.eventto].cache_function(event.block.blkid)
@@ -196,15 +190,15 @@ while currentTime<simulationTime:
 
     # print(event)    
 
-slow=[]
+
+
+
+# Printing details of each node
 for nd in nodes:
     print("Dumped by " + str(nd.nodeid) + ": ", end="")
     print(nd.dumped_blocks)
     nd.showBlockchain()
     nd.findLongestChain()
     nd.printStats()
-    if nd.slow==True :
-        slow.append(nd.nodeid)
-    print(slow)
 dot.render('doctest-output/round-table.gv', view=True)  # doctest: +SKIP
 longestChain.render('doctest-output/longest-chain-table.gv', view=True)  # doctest: +SKIP
