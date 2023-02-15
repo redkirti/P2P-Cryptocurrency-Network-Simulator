@@ -13,7 +13,7 @@ Requirements:
 Steps to Run:
 In the project directory run:
 ```sh
-### python eventsim.py [arg1] [arg2] [arg3] [arg4] [arg5] [arg6] > output.txt
+python eventsim.py [arg1] [arg2] [arg3] [arg4] [arg5] [arg6] > output.txt
 ```
 Replace the argumens with the following:
 - [arg1] : The number of peers
