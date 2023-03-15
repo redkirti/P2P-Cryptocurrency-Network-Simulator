@@ -112,7 +112,7 @@ attacker_queue = []
 # Creating a set for only releasing one block per level by attacker
 released = set()
 startlevel = 1
-
+zerodash = False
 # Main simulation function
 # while(currentTime<simulationTime):
 while currentTime<simulationTime:
@@ -172,6 +172,11 @@ while currentTime<simulationTime:
                 heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventfrom, i, None, blk, event.level))
         else:
             attacker_queue.append(blk.blkid)
+            if(zerodash == True):
+                for i in nodes[event.eventfrom].peersarr:
+                    latency = calculateLatency(event.eventfrom, i, "blk")
+                    heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventfrom, i, None, blk, event.level))
+
     
     elif (event.type == "receiveBlk"):
         if event.block.blkid in nodes[event.eventto].blkvisited:
@@ -211,6 +216,7 @@ while currentTime<simulationTime:
                 heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventto, i, None, event.block, event.level))
         else:
             ls = nodes[peers].peersarr.copy()
+            zerodash = False
             # If already released a block at that level from private chain
             if event.block.level in released or event.block.level<startlevel:
                 continue
@@ -247,6 +253,7 @@ while currentTime<simulationTime:
                 for i in ls:
                     latency = calculateLatency(peers, i, "blk")
                     heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level))
+                zerodash = True
             else:
                 print("Case: No lead")
                 released = set()
