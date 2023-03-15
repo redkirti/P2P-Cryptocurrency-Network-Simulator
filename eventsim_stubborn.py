@@ -22,7 +22,6 @@ Tx=int(sys.argv[4])
 # interarrival time for Blocks
 I=int(sys.argv[5])
 
-# Simulation Time
 simulationTime = int(sys.argv[6])
 
 nodes, hpower = initialize(peers, slow, lowCPU)
@@ -138,7 +137,7 @@ while currentTime<simulationTime:
 
         blk = nodes[event.eventfrom].generateBlock()
         blk.level = event.level+1
-        # nodes[event.eventfrom].level += 1
+        nodes[event.eventfrom].level += 1
         nodes[event.eventfrom].currentHash = blk.blkid
         
         print("Block created - Time : %s, Block ID : %s , Node Number: %s >>>>>>>>>>>>>>>>>>>>>>>>>>>"%(currentTime,blk.blkid,event.eventfrom) )

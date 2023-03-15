@@ -1,6 +1,7 @@
 import random
 from node import Node
-def initialize(peers, slow, lowCPU):
+def initialize(peers, slow, lowCPU, zeta=0):
+    print("Hello again" + str(zeta))
     # Choosing slow and lowCPU nodes randomly
     slowNodes = random.sample(range(peers), int(slow*peers/100))
     lowNodes = random.sample(range(peers), int(lowCPU*peers/100))
@@ -12,17 +13,13 @@ def initialize(peers, slow, lowCPU):
     print("Low CPU Nodes: ", end="")
     print(lowNodes)
 
-    # adj = np.random.rand(peers, peers)
-    # adj[adj > 0.5] = 1
-    # adj[adj <= 0.5] = 0
-    # print(adj)
-
-
     visited = []
 
     def dfs(startNode): 
         visited[startNode] = True
-        for neighbour in connectednodes[startNode]: 
+        for neighbour in connectednodes[startNode]:
+            if(neighbour == peers):
+                continue
             if (visited[neighbour] == False):
                 dfs(neighbour)
 
@@ -45,6 +42,16 @@ def initialize(peers, slow, lowCPU):
     def create_graph():
         for i in range(peers):
             connectednodes.append([])
+        if zeta!=0:
+            connectednodes.append([])
+            # Adding attacker node in graph
+            fraction = int((int(zeta)/100)*peers)    #Fraction of honest nodes connected with attacker
+            print("Here it comes: "+str(fraction))
+            connectednodes[peers].extend(random.sample(range(peers), fraction))
+            for i in connectednodes[peers]:
+                connectednodes[i].append(peers)
+            print("This is the list")
+            print(connectednodes[peers])
 
         for i in range(peers):
             connections = random.randint(4, 8)
@@ -53,7 +60,8 @@ def initialize(peers, slow, lowCPU):
             st = set(range(peers))
             st.remove(i)
             for j in connectednodes[i]:
-                st.remove(j)
+                if j in st:
+                    st.remove(j)
             st = st - fullnodes
             # print(st)
             if(len(st)<(connections-len(connectednodes[i]))):
@@ -75,6 +83,9 @@ def initialize(peers, slow, lowCPU):
         fullnodes = set()
         create_graph()
 
+
+
+
     print("Adjacency list of nodes: ")
     for i in connectednodes:
         print(i)
@@ -90,4 +101,12 @@ def initialize(peers, slow, lowCPU):
         if i in lowNodes:
             isLowCPU = True
         node.append(Node(i, connectednodes[i], {}, [], [], isSlow, isLowCPU, peers))
+
+    # Initializing the attacker node
+    if zeta!=0:
+        print("Hello")
+        node.append(Node(peers, connectednodes[peers], {}, [], [], False, False, peers))
+    else:
+        print("Zero")
+
     return node, hpower

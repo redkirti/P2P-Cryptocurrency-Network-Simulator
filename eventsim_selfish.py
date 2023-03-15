@@ -22,20 +22,26 @@ Tx=int(sys.argv[4])
 # interarrival time for Blocks
 I=int(sys.argv[5])
 
-# Simulation Time
-simulationTime = int(sys.argv[6])
+# Fraction of honest nodes an attacker is connected do.
+zeta = int(sys.argv[6])
+print("Hello" + str(zeta))
+# Hashing power of attacker
+hashpower = float(sys.argv[7])
 
-nodes, hpower = initialize(peers, slow, lowCPU)
+# Simulation Time
+simulationTime = int(sys.argv[8])
+
+nodes, hpower = initialize(peers, slow, lowCPU, zeta)
 heap = []
 currentTime = 0
 txncount = 0
 rho = []  #positive minimum value corresponding to speed of light propagation delay
 
-for i in range(peers):
-    rho.append(list(range(0,peers)))
+for i in range(peers+1):
+    rho.append(list(range(peers+1)))
 
-for i in range(peers):
-    for j in range(peers):
+for i in range(peers+1):
+    for j in range(peers+1):
         if(j>i):
             rho[i][j] = random.uniform(0.01,0.5)
         elif(j<i):
@@ -56,7 +62,10 @@ currentTime = 5
 # Function to create block genereation event considering hashing power of the node
 def createBlkEvent(currentTime, i, level):
     # print("Block event created - Time : %s, level : %s , Node Number: %s"%(currentTime,level,i) )
-    if nodes[i].low == True:
+
+    if i == peers:
+        power = hashpower
+    elif nodes[i].low == True:
         power = hpower
     else:
         power = hpower * 10
@@ -67,7 +76,7 @@ def createBlkEvent(currentTime, i, level):
     heappush(heap, e)
 
 # Pushing intitial block generation events
-for i in range(peers):
+for i in range(peers+1):
     createBlkEvent(currentTime, i, 1)
         
 
@@ -97,6 +106,9 @@ def calculateLatency(sender, receiver, type):
 
 currentTime = 0
 txncreationTime = 0
+
+# Creating queue for attacker private blocks
+attacker_queue = []
 
 # Main simulation function
 # while(currentTime<simulationTime):
@@ -148,10 +160,15 @@ while currentTime<simulationTime:
         # Creating next block generation event for the same peer
         createBlkEvent(currentTime, event.eventfrom, event.level+1)
         
-        # Sending blocks to other nodes
-        for i in nodes[event.eventfrom].peersarr:
-            latency = calculateLatency(event.eventfrom, i, "blk")
-            heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventfrom, i, None, blk, event.level))
+        
+        # Check for attacker , attacker doesn't publish blocks
+        if(event.eventfrom != peers):
+            # Sending blocks to other nodes
+            for i in nodes[event.eventfrom].peersarr:
+                latency = calculateLatency(event.eventfrom, i, "blk")
+                heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventfrom, i, None, blk, event.level))
+        else:
+            attacker_queue.append(blk.blkid)
     
     elif (event.type == "receiveBlk"):
         if event.block.blkid in nodes[event.eventto].blkvisited:
@@ -170,26 +187,57 @@ while currentTime<simulationTime:
         # print(">>>>>>>>>>>>>>>Block Recived - Time : %s, Block ID : %s , Node Number: %s"%(currentTime,blk.blkid,event.eventto) )
         # createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)        
 
-        mx, blkhash = nodes[event.eventto].cache_function(event.block.blkid)
+        if(event.eventto != peers):
+            mx, blkhash = nodes[event.eventto].cache_function(event.block.blkid)
 
-        if nodes[event.eventto].level == event.level:
-            # Update current hash and create a new create block event
-            nodes[event.eventto].currentHash = blk.blkid
-            nodes[event.eventto].level += 1
-            if mx > nodes[event.eventto].level:
-                nodes[event.eventto].currentHash = blkhash
-                createBlkEvent(currentTime, event.eventto, mx+1)
+            if nodes[event.eventto].level == event.level:
+                # Update current hash and create a new create block event
+                nodes[event.eventto].currentHash = blk.blkid
+                nodes[event.eventto].level += 1
+                if mx > nodes[event.eventto].level:
+                    nodes[event.eventto].currentHash = blkhash
+                    createBlkEvent(currentTime, event.eventto, mx+1)
+                else:
+                    # Creating next block generation event for the same peer
+                    createBlkEvent(currentTime, event.eventto, event.level+1)
+
+            ls = nodes[event.eventto].peersarr.copy()
+            ls.remove(event.eventfrom)
+            for i in ls:
+                latency = calculateLatency(event.eventto, i, "blk")
+                heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventto, i, None, event.block, event.level))
+        else:
+            ls = nodes[peers].peersarr.copy()
+            if((nodes[peers].level - nodes[event.eventfrom].level) > 1):
+                blocktorelease = attacker_queue.pop(0)
+                blk = nodes[peers].register[blocktorelease]
+                for i in ls:
+                    latency = calculateLatency(peers, i, "blk")
+                    heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level))
+            elif((nodes[peers].level - nodes[event.eventfrom].level) == 1):
+                blocktorelease = attacker_queue.pop(0)
+                blk = nodes[peers].register[blocktorelease]
+                for i in ls:
+                    latency = calculateLatency(peers, i, "blk")
+                    heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level))
+                blocktorelease = attacker_queue.pop(0)
+                blk = nodes[peers].register[blocktorelease]
+                for i in ls:
+                    latency = calculateLatency(peers, i, "blk")
+                    heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level))
+            elif((nodes[peers].level - nodes[event.eventfrom].level) == 0):
+                blocktorelease = attacker_queue.pop(0)
+                blk = nodes[peers].register[blocktorelease]
+                for i in ls:
+                    latency = calculateLatency(peers, i, "blk")
+                    heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level))
             else:
-                # Creating next block generation event for the same peer
-                createBlkEvent(currentTime, event.eventto, event.level+1)
+                attacker_queue = []
+                nodes[peers].currentHash = event.block.blkid
+                createBlkEvent(currentTime, peers, event.block.level+1)
 
-        ls = nodes[event.eventto].peersarr.copy()
-        ls.remove(event.eventfrom)
-        for i in ls:
-            latency = calculateLatency(event.eventto, i, "blk")
-            heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventto, i, None, event.block, event.level))
 
-    # print(event)    
+        # print(event)    
 
 
 
