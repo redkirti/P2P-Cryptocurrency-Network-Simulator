@@ -37,7 +37,7 @@ class Node:
 
     def getGenesis(self):
         blk=Block("0",[],None)
-        blk.balance=[50]*(self.peers+1)
+        blk.balance=[5000]*(self.peers+1)
         self.blockchain["0"]=[blk]
         self.register["0"]=blk
     
