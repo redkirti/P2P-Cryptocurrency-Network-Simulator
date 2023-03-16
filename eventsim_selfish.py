@@ -270,7 +270,7 @@ while currentTime<simulationTime:
                 released = set()
                 attacker_queue = []
                 nodes[peers].currentHash = event.block.blkid
-                createBlkEvent(currentTime, peers, event.block.level+1)
+                createBlkEvent(currentTime, peers, event.block.level)
                 nodes[peers].level = event.block.level
                 startlevel = event.block.level + 1
 
