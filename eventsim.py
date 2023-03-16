@@ -159,9 +159,18 @@ while currentTime<simulationTime:
         nodes[event.eventto].blkvisited[event.block.blkid] = True
         # Verify transactions
         flag = nodes[event.eventto].verify(event.block)
-        if flag == False:
+        if flag == 0:
             continue
 
+        # If it is a cached block just send to others
+        if flag == 2:
+            ls = nodes[event.eventto].peersarr.copy()
+            ls.remove(event.eventfrom)
+            for i in ls:
+                latency = calculateLatency(event.eventto, i, "blk")
+                heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventto, i, None, event.block, event.level))
+            continue
+        
         # If valid then add the block in the chain
         nodes[event.eventto].updateChain(event.block)
 
