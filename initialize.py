@@ -1,7 +1,7 @@
 import random
 from node import Node
 def initialize(peers, slow, lowCPU, zeta=0):
-    print("Hello again" + str(zeta))
+    # print("Hello again" + str(zeta))
     # Choosing slow and lowCPU nodes randomly
     slowNodes = random.sample(range(peers), int(slow*peers/100))
     lowNodes = random.sample(range(peers), int(lowCPU*peers/100))
@@ -104,9 +104,6 @@ def initialize(peers, slow, lowCPU, zeta=0):
 
     # Initializing the attacker node
     if zeta!=0:
-        print("Hello")
         node.append(Node(peers, connectednodes[peers], {}, [], [], False, False, peers))
-    else:
-        print("Zero")
 
     return node, hpower
