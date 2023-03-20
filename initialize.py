@@ -1,11 +1,11 @@
 import random
 from node import Node
-def initialize(peers, slow, lowCPU, zeta=0):
+def initialize(peers, slow, lowCPU, zeta=0, hashpower=0):
     # print("Hello again" + str(zeta))
     # Choosing slow and lowCPU nodes randomly
     slowNodes = random.sample(range(peers), int(slow*peers/100))
     lowNodes = random.sample(range(peers), int(lowCPU*peers/100))
-    hpower = (1 / ((10*peers)- (9*len(lowNodes))))
+    hpower = ((1-hashpower) / ((10*peers)- (9*len(lowNodes))))
 
     print("Total Nodes: " + str(peers))
     print("Slow Nodes: ", end="")
