@@ -8,6 +8,7 @@ from event import Event
 from transaction import Txn
 from graphy import dot,longestChain
 from block import Block
+import gc
 
 #No of peers
 peers = int(sys.argv[1])
@@ -61,6 +62,8 @@ currentTime = 5
 
 # Function to create block genereation event considering hashing power of the node
 def createBlkEvent(currentTime, i, level):
+    if currentTime>simulationTime:
+        return
     # print("Block event created - Time : %s, level : %s , Node Number: %s"%(currentTime,level,i) )
 
     if i == peers:
@@ -113,11 +116,20 @@ attacker_queue = []
 released = set()
 startlevel = 1
 zerodash = False
+timeStore = 0
 # Main simulation function
 # while(currentTime<simulationTime):
-while currentTime<simulationTime:
+while len(heap)!=0 or len(attacker_queue)!=0:
+    if len(heap)==0:
+        print("Timestore: " + str(timeStore))
+        attacker_block = attacker_queue.pop(0)
+        for i in nodes[peers].peersarr:
+            latency = calculateLatency(peers, i, "blk")
+            blk = nodes[peers].register[attacker_block]
+            heappush(heap, Event(timeStore+latency, "receiveBlk", peers, i, None, blk, blk.level-1))
     event = heappop(heap)
     currentTime = event.timestamp
+
     if(event.type == "createTxn"):
         # print("Random Transaction created - Time : %s, From : %s "%(currentTime,event.eventfrom) )
         txn = generateTxn(event.eventfrom)
@@ -143,6 +155,7 @@ while currentTime<simulationTime:
             # print("sending transactions to :%s"%i)
             latency = calculateLatency(event.eventto, i, "txn")
             heappush(heap, Event(currentTime+latency, "receiveTxn", event.eventto, i, event.txn, None, None))
+    
     elif (event.type == "createBlk"):
 
         # Check if a block exists at the same level in that node, if it exists then return null else create the blk
@@ -156,7 +169,7 @@ while currentTime<simulationTime:
         # nodes[event.eventfrom].level += 1
         nodes[event.eventfrom].currentHash = blk.blkid
         
-        print("Block created - Time : %s, Block ID : %s , Node Number: %s >>>>>>>>>>>>>>>>>>>>>>>>>>>"%(currentTime,blk.blkid,event.eventfrom) )
+        print("Block created - Time : %s, Block ID : %s , Node Number: %s, Level: %s >>>>>>>>>>>>>>>>>>>>>>>>>>>"%(currentTime,blk.blkid,event.eventfrom, blk.level) )
         nodes[event.eventfrom].blkvisited[blk.blkid] = True
         # time_ = currentTime + np.random.exponential(scale=Tb) 
 
@@ -181,7 +194,6 @@ while currentTime<simulationTime:
                 released = set()
             else:
                 attacker_queue.append(blk.blkid)
-
     
     elif (event.type == "receiveBlk"):
         if event.block.blkid in nodes[event.eventto].blkvisited:
@@ -190,18 +202,22 @@ while currentTime<simulationTime:
         # Verify transactions
         flag = nodes[event.eventto].verify(event.block)
         if flag == 0:
+            print("Invalid Block")
             continue
         # If it is a cached block just send to others
         if flag == 2 and event.eventto != peers:
+            print("Block Cached by honest")
             ls = nodes[event.eventto].peersarr.copy()
             ls.remove(event.eventfrom)
             for i in ls:
                 latency = calculateLatency(event.eventto, i, "blk")
                 heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventto, i, None, event.block, event.level))
+            print(">>>>>>>>>>>>>>>Block Recived - Time : %s, Block ID : %s , From Node: %s, To Node Number: %s, Block level: %s"%(currentTime,event.block.blkid, event.block.creatorid,event.eventto, event.block.level) )
             continue
         
         # For attacker if future block is received
         if flag == 2:
+            print("Cached block by attacker")
             continue
 
         # If valid then add the block in the chain
@@ -209,20 +225,21 @@ while currentTime<simulationTime:
 
         # Same receive block txns can also arrive, ignore it
         blk = event.block        
-        print(">>>>>>>>>>>>>>>Block Recived - Time : %s, Block ID : %s , From Node: %s, To Node Number: %s"%(currentTime,blk.blkid, event.block.creatorid,event.eventto) )
+        print(">>>>>>>>>>>>>>>Block Recived - Time : %s, Block ID : %s , From Node: %s, To Node Number: %s, Block level: %s"%(currentTime,blk.blkid, event.block.creatorid,event.eventto, blk.level) )
         # createBlkEvent(currentTime+Tx, event.eventfrom, event.level+1)        
 
         # Honest peers code
         if(event.eventto != peers):
             mx, blkhash = nodes[event.eventto].cache_function(event.block.blkid)
-
+            print("Mx: " + str(mx) + ", blkhash: " + str(blkhash))
+            print("node level: %s, event level: %s"%(nodes[event.eventto].level, event.level))
             if nodes[event.eventto].level == event.level:
                 # Update current hash and create a new create block event
                 nodes[event.eventto].currentHash = blk.blkid
                 nodes[event.eventto].level += 1
                 if mx > nodes[event.eventto].level:
                     nodes[event.eventto].currentHash = blkhash
-                    createBlkEvent(currentTime, event.eventto, mx+1)
+                    createBlkEvent(currentTime, event.eventto, mx)
                 else:
                     # Creating next block generation event for the same peer
                     createBlkEvent(currentTime, event.eventto, event.level+1)
@@ -234,6 +251,7 @@ while currentTime<simulationTime:
                 heappush(heap, Event(currentTime+latency, "receiveBlk", event.eventto, i, None, event.block, event.level))
         # Attacker Code
         else:
+            print("This is current start level: " + str(startlevel))
             ls = nodes[peers].peersarr.copy()
             zerodash = False
             mx, blkhash = nodes[event.eventto].cache_function(event.block.blkid)
@@ -254,7 +272,7 @@ while currentTime<simulationTime:
                     blk = nodes[peers].register[blocktorelease]
                     for i in ls:
                         latency = calculateLatency(peers, i, "blk")
-                        heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level))
+                        heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level-1))
                 elif(attacker_level == 2):
                     print("Case: =2")
                     released.add(event.block.level)
@@ -263,12 +281,17 @@ while currentTime<simulationTime:
                     blk = nodes[peers].register[blocktorelease]
                     for i in ls:
                         latency = calculateLatency(peers, i, "blk")
-                        heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level))
+                        heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level-1))
                     blocktorelease = attacker_queue.pop(0)
                     blk = nodes[peers].register[blocktorelease]
                     for i in ls:
                         latency = calculateLatency(peers, i, "blk")
-                        heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level))
+                        heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level-1))
+                    released = set()
+                    attacker_queue = []
+                    startlevel = nodes[event.eventto].level
+                    print("This is new start level" + str(startlevel))
+
                 elif(attacker_level == 1):
                     print("Case: =1")
                     released.add(event.block.level)
@@ -276,7 +299,7 @@ while currentTime<simulationTime:
                     blk = nodes[peers].register[blocktorelease]
                     for i in ls:
                         latency = calculateLatency(peers, i, "blk")
-                        heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level))
+                        heappush(heap, Event(currentTime+latency, "receiveBlk", peers, i, None, blk, blk.level-1))
                     zerodash = True
                 else:
                     print("Case: No lead")
@@ -286,10 +309,10 @@ while currentTime<simulationTime:
                     createBlkEvent(currentTime, peers, event.block.level)
                     nodes[peers].level = event.block.level
                     startlevel = event.block.level
+                    print("This is new start level" + str(startlevel))
 
+        timeStore = currentTime
         # print(event)    
-
-
 
 
 # Printing details of each node
@@ -299,5 +322,9 @@ for nd in nodes:
     nd.showBlockchain()
     nd.findLongestChain()
     nd.printStats()
+
+del heap
+del nodes
+gc.collect()
 # dot.render('doctest-output/round-table.gv', view=True)  # doctest: +SKIP
 # longestChain.render('doctest-output/longest-chain-table.gv', view=True)  # doctest: +SKIP
