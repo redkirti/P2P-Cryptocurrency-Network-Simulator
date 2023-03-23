@@ -324,8 +324,10 @@ for nd in nodes:
     nd.findLongestChain()
     nd.printStats(hashpower)
 
+dot.render('doctest-output/round-table.gv', view=True)  # doctest: +SKIP
+longestChain.render('doctest-output/longest-chain-table.gv', view=True)  # doctest: +SKIP
+
 del heap
 del nodes
 gc.collect()
-# dot.render('doctest-output/round-table.gv', view=True)  # doctest: +SKIP
-# longestChain.render('doctest-output/longest-chain-table.gv', view=True)  # doctest: +SKIP
+
