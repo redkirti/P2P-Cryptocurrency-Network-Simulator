@@ -303,7 +303,7 @@ for nd in nodes:
     print(nd.dumped_blocks)
     nd.showBlockchain()
     nd.findLongestChain()
-    nd.printStats()
+    nd.printStats(hashpower)
 
 del heap
 del nodes
