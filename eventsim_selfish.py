@@ -129,7 +129,8 @@ while len(heap)!=0 or len(attacker_queue)!=0:
             heappush(heap, Event(timeStore+latency, "receiveBlk", peers, i, None, blk, blk.level-1))
     event = heappop(heap)
     currentTime = event.timestamp
-
+    if currentTime>simulationTime and event.type == "createBlk":
+        continue
     if(event.type == "createTxn"):
         # print("Random Transaction created - Time : %s, From : %s "%(currentTime,event.eventfrom) )
         txn = generateTxn(event.eventfrom)
