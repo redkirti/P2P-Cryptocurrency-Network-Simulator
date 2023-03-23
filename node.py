@@ -140,7 +140,11 @@ class Node:
         for node in self.blockchain.keys():
             self.hashMapping[str(self.nodeid)+"_Node_"+node]="_Node_"+str(self.nodeid)+"__"+str(self.currNo)
             self.currNo+=1
-            dot.node(self.hashMapping[str(self.nodeid)+"_Node_"+node])
+            print("time is here:",self.register,self.peersarr,self.peers)
+            if self.register[node].creatorid == self.peers:
+                dot.node(str(self.nodeid)+"_Node_"+node,style='filled',fillcolor='red')
+            else:
+                dot.node(str(self.nodeid)+"_Node_"+node)
 
         def dfs(currId):
             if currId != "0":
@@ -157,14 +161,14 @@ class Node:
                     self.hashMapping[str(self.nodeid)+"_Node_"+nextId]="_Node_"+str(self.nodeid)+"__"+str(self.currNo)
                     self.currNo+=1
 
-                if  (self.hashMapping[str(self.nodeid)+"_Node_"+nextId]) not in visited:
-                    dot.edge(self.hashMapping[(str(self.nodeid)+"_Node_"+currId)],self.hashMapping[(str(self.nodeid)+"_Node_"+nextId)])
-                    visited.append(self.hashMapping[(str(self.nodeid)+"_Node_"+nextId)])
+                if  (str(self.nodeid)+"_Node_"+nextId) not in visited:
+                    dot.edge(str(self.nodeid)+"_Node_"+currId,(str(self.nodeid)+"_Node_"+nextId))
+                    visited.append((str(self.nodeid)+"_Node_"+nextId))
                     dfs(nextId)
 
         for currNode in self.blockchain.keys():
             if currNode not in visited:
-                visited.append(self.hashMapping[str(self.nodeid)+"_Node_"+currNode])
+                visited.append(str(self.nodeid)+"_Node_"+currNode)
                 dfs(currNode)
 
         
@@ -195,8 +199,11 @@ class Node:
         for nodeVal in self.longestChain:
             if self.register[nodeVal].creatorid == self.nodeid:
                 self.stats["selfBlockLogestChain"]+=1
-            currNode = self.hashMapping[str(self.nodeid)+"_Node_"+nodeVal]
-            longestChain.node(currNode)
+            currNode = str(self.nodeid)+"_Node_"+nodeVal
+            if self.register[nodeVal].creatorid == self.peers:               
+                longestChain.node(currNode,style='filled',fillcolor='red')
+            else:
+                longestChain.node(currNode)
             if lastNode:
                 longestChain.edge(lastNode, currNode)
             lastNode = currNode
