@@ -5,15 +5,24 @@ A simple blockchain event simulator that mimics the working of an actual blockch
 - Block Creation
 - Block Receiving
 
-Requirements:
+## Requirements:
 - Python
 - Graphviz for visualization of blockchain tree
 - Numpy
 
-Steps to Run:
+## Steps to Run:
 In the project directory run:
-```sh
+For simulating simple blockchain:
+```bash
 python eventsim.py [arg1] [arg2] [arg3] [arg4] [arg5] [arg6] > output.txt
+```
+For simulating selfish mining attack on blockchain:
+```bash
+python eventsim_selfish.py [arg1] [arg2] [arg3] [arg4] [arg5] [arg7] [arg8] [arg6] > output.txt
+```
+For simulating stubborn mining attack on blockchain:
+```bash
+python eventsim_stubborn.py [arg1] [arg2] [arg3] [arg4] [arg5] [arg7] [arg8] [arg6] > output.txt
 ```
 Replace the argumens with the following:
 - [arg1] : The number of peers
@@ -22,6 +31,8 @@ Replace the argumens with the following:
 - [arg4] : Interarrival time of transactions
 - [arg5] : Interarrival time of blocks
 - [arg6] : Simulation Time
+- [arg7] : Fraction of nodes attacker is connected to
+- [arg8] : Hashing power of attacker
 
 >output.txt contains the results of the simulation  
 >doctest-output folder contains the blockchains of the nodes along with their longest chains.
