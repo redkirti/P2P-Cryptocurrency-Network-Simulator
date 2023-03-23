@@ -140,9 +140,12 @@ class Node:
         self.currNo = 1
         # create Nodes for the graph
         for node in self.blockchain.keys():
-            self.hashMapping[str(self.nodeid)+"_Node_"+node]="_Node_"+str(self.nodeid)+"__"+str(self.currNo)
+            self.hashMapping[str(self.nodeid)+"_Node_"+node]="_Node_"+str(self.nodeid)+"__"+str(node)[:6]
             self.currNo+=1
-            dot.node(self.hashMapping[str(self.nodeid)+"_Node_"+node])
+            if self.register[node].creatorid == self.peers:
+                dot.node(self.hashMapping[str(self.nodeid)+"_Node_"+node],style='filled',fillcolor='red')
+            else:
+                dot.node(self.hashMapping[str(self.nodeid)+"_Node_"+node])
 
         def dfs(currId):
             if currId != "0":
@@ -156,7 +159,7 @@ class Node:
                 nextId = next.blkid
  
                 if (str(self.nodeid)+"_Node_"+nextId) not in self.hashMapping:
-                    self.hashMapping[str(self.nodeid)+"_Node_"+nextId]="_Node_"+str(self.nodeid)+"__"+str(self.currNo)
+                    self.hashMapping[str(self.nodeid)+"_Node_"+nextId]="_Node_"+str(self.nodeid)+"__"+str(node)[:6]
                     self.currNo+=1
 
                 if  (self.hashMapping[str(self.nodeid)+"_Node_"+nextId]) not in visited:
@@ -198,7 +201,10 @@ class Node:
             if self.register[nodeVal].creatorid == self.nodeid:
                 self.stats["selfBlockLogestChain"]+=1
             currNode = self.hashMapping[str(self.nodeid)+"_Node_"+nodeVal]
-            longestChain.node(currNode)
+            if self.register[nodeVal].creatorid == self.peers:               
+                longestChain.node(currNode,style='filled',fillcolor='red')
+            else:
+                longestChain.node(currNode)
             if lastNode:
                 longestChain.edge(lastNode, currNode)
             lastNode = currNode
@@ -252,4 +258,3 @@ class Node:
         # for nodes in self.block:
 
         print("-------------------------x--------------------------")
-
